@@ -150,8 +150,8 @@ set(h, 'fontweight', 'normal');
 colors = cbrewer('qual', 'Set1', 10);
 
 clear dat;
-dat(:, 1) = randn(1, 10) + 10;
-dat(:, 2) = randn(1, 10) + 20 + randn(1,10);
+dat(:, 1) = randn(1, 50) + 10;
+dat(:, 2) = randn(1, 50) + 12;
 
 subplot(4,7,6); % rather than a square plot, make it thinner
 hold on;
@@ -174,6 +174,12 @@ ylabel('Value'); xlabel('Data')
 % if these data are paired, show the differences
 % plot(dat', '.k-', 'linewidth', 0.2, 'markersize', 2);
 
+% significance star for the difference
+[~, pval] = ttest(dat(:, 1), dat(:, 2));
+% if mysigstar gets 2 xpos inputs, it will draw a line between them and the
+% sigstars on top
+mysigstar([1 2], 17, pval);
+
 % add significance stars for each bar
 for b = 1:2,
     [~, pval] = ttest(dat(:, b));
@@ -182,12 +188,39 @@ for b = 1:2,
     % if mysigstar gets just 1 xpos input, it will only plot stars
 end
 
+%% VIOLING PLOTS
+
+% barplots obscure a lot of the features in your data, since just the mean
+% and sem are poor summary statistics when the data are not normally
+% distributed.
+% see https://www.kickstarter.com/projects/1474588473/barbarplots
+
+subplot(4,7,7); hold on;
+% rather than a square plot, make it thinner
+violinPlot(dat(:, 1), 'histOri', 'left', 'widthDiv', [2 1], 'showMM', 0, ...
+    'color',  mat2cell(colors(1, :), 1));
+%subplot(4,7,7); hold on;
+violinPlot(dat(:, 2), 'histOri', 'right', 'widthDiv', [2 2], 'showMM', 0, ...
+    'color',  mat2cell(colors(2, :), 1));
+set(gca, 'xtick', [0.6 1.4], 'xticklabel', {'low', 'high'}, 'xlim', [0.2 1.8]);
+ylabel('Value'); xlabel('Data');
+
+% add significance stars for each bar
+xticks = get(gca, 'xtick');
+for b = 1:2,
+    [~, pval] = ttest(dat(:, b));
+    yval = max(dat(:, b)) * 1.2; % plot this on top of the bar
+    yval = 6; % plot below
+    mysigstar(xticks(b), yval, pval);
+    % if mysigstar gets just 1 xpos input, it will only plot stars
+end
+
 % significance star for the difference
 [~, pval] = ttest(dat(:, 1), dat(:, 2));
 % if mysigstar gets 2 xpos inputs, it will draw a line between them and the
 % sigstars on top
-mysigstar([1 2], max(get(gca, 'ylim')), pval);
-
+mysigstar(xticks, 18, pval);
+   
 %% IMAGESC WITH COLORBAR
 
 z = peaks(100);
