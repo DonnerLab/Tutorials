@@ -143,8 +143,6 @@ s.Position = spos;
 [a, h] = suplabel(sprintf('delta r = %.3f, p = %.3f', rddiff, p), 't');
 set(h, 'fontweight', 'normal');
 
-% It's a bit 
-
 %% BARPLOTS
 
 colors = cbrewer('qual', 'Set1', 10);
@@ -178,13 +176,13 @@ ylabel('Value'); xlabel('Data')
 [~, pval] = ttest(dat(:, 1), dat(:, 2));
 % if mysigstar gets 2 xpos inputs, it will draw a line between them and the
 % sigstars on top
-mysigstar([1 2], 17, pval);
+mysigstar(gca, [1 2], 17, pval);
 
 % add significance stars for each bar
 for b = 1:2,
     [~, pval] = ttest(dat(:, b));
     yval = mean(dat(:, b)) * 0.5; % plot this on top of the bar
-    mysigstar(b, yval, pval);
+    mysigstar(gca, b, yval, pval);
     % if mysigstar gets just 1 xpos input, it will only plot stars
 end
 
@@ -211,7 +209,7 @@ for b = 1:2,
     [~, pval] = ttest(dat(:, b));
     yval = max(dat(:, b)) * 1.2; % plot this on top of the bar
     yval = 6; % plot below
-    mysigstar(xticks(b), yval, pval);
+    mysigstar(gca, xticks(b), yval, pval);
     % if mysigstar gets just 1 xpos input, it will only plot stars
 end
 
@@ -219,7 +217,24 @@ end
 [~, pval] = ttest(dat(:, 1), dat(:, 2));
 % if mysigstar gets 2 xpos inputs, it will draw a line between them and the
 % sigstars on top
-mysigstar(xticks, 18, pval);
+mysigstar(gca, xticks, 18, pval);
+
+%% SCATTER WITH HISTOGRAM OF DIFFERENCE
+
+% instead of showing 2 bars with a significance between them (let's say,
+% condition A > condition B), scatter the two conditions and add the
+% identity line to show that the majority of subjects are on one side of
+% that line. Then add a histogram of the difference, with significance
+% star.
+
+clear dat;
+x = randn(1, 50) + 10;
+y = x - 1 + 0.8*randn(1,50);
+
+% set the same data range on both axes
+subplot(3,3,4); hold on;
+scatterHistDiff(x, y);
+xlabel('SomethingA'); ylabel('SomethingB');
    
 %% IMAGESC WITH COLORBAR
 
@@ -235,7 +250,7 @@ colormap(colors);
 % when the data are sequential (eg. only going from 0 to positive, use for
 % example colors = cbrewer('seq', 'YlOrRd', 64); or the default parula.
 
-subplot(3,3,4); % take a bit more space here because the colorbar also needs to fit in
+subplot(3,3,6); % take a bit more space here because the colorbar also needs to fit in
 imagesc(z);
 
 % note that imagesc cannot handle unevenly spaced axes. if you want eg. a
@@ -402,7 +417,14 @@ set(l, 'position', lpos, 'box', 'off');
 % sometimes, axes are plotted in a dark grey thats not exactly black (which
 % I find annoying). Make sure this doesnt happen.
 axes = findobj(gcf, 'type', 'axes');
-set([axes(:)], 'xcolor', 'k', 'ycolor', 'k');
+for a = 1:length(axes),
+    if axes(a).YColor < [1 1 1],
+        axes(a).YColor = [0 0 0];
+    end
+    if axes(a).XColor < [1 1 1],
+        axes(a).XColor = [0 0 0];
+    end
+end
 
 % when you plotted several subplots but want them to have shared axes, use
 % suplabel
