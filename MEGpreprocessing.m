@@ -312,6 +312,55 @@ loglog(freq.freq, mean(freq.powspctrm), 'k', 'linewidth', 1);
 axis tight; axis square; box off; ylim(ylims);
 set(gca, 'xtick', [10 50 100], 'tickdir', 'out');
 
+% ==================================================================
+% OPTIONAL: ICA TO REMOVE CARDIAC ARTEFACT
+% ICA components can be automatically selected by computing the coherence 
+% between the component and the ECG signal. Based on a threshold value (t.b.d.) 
+% 1-3 components should be selected and rejected from the data. This is not yet 
+% properly tested or implemented by anyone in the lab. Some code starting
+% points below.
+%
+% see also http://www.fieldtriptoolbox.org/example/use_independent_component_analysis_ica_to_remove_ecg_artifacts
+% ==================================================================
+
+% 1. get components (you'll want to do this in a separate script on the cluster)
+cfg                 = [];
+cfg.method          = 'runica';
+cfg.channel         = 'MEG'; % run only on MEG chans, correlate with EKG later
+comp                = ft_componentanalysis(cfg, data);
+
+% 2. select components automatically based on the coherence with EKG
+
+% get only the ECG signal
+ekgchan = find(~cellfun(@isempty, strfind(data.label, 'EKG')));
+ekgdat  = cat(2, data.trial{:});
+ekgdat  = ekgdat(ekgchan, :);
+
+% concatenate component activity
+icadat  = cat(2, comp.trial{:});
+
+% compute coherence between data and component
+Cxy     = mscohere(ekgdat, icadat', hamming(100), 80, 100, data.fsample);
+
+% find the two largest
+[~, idx] = sort(mean(Cxy));
+compidx = idx(1:2); 
+
+% here, you might want to plot the topography and timecourse
+cfg                 = [];
+cfg.viewmode        = 'component';
+cfg.channel         = compidx;
+cfg.layout          = 'CTF275.lay';
+cfg.style           = 'straight';
+ft_databrowser(cfg, comp);
+
+% project those out of the data
+cfg             = [];
+cfg.component   = idx;
+data            = ft_rejectcomponent(cfg, comp, data);
+
+% and... you're done! 
+
 end % rec
 
 
